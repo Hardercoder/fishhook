@@ -26,14 +26,20 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
+// defined用来检测常量有没有被定义,若常量存在，则返回true，否则返回 false
 #if !defined(FISHHOOK_EXPORT)
+// 如果FISHHOOK_EXPORT没有被定义，在动态库中隐藏该符号用于下面的两个函数
 #define FISHHOOK_VISIBILITY __attribute__((visibility("hidden")))
 #else
 #define FISHHOOK_VISIBILITY __attribute__((visibility("default")))
 #endif
 
 #ifdef __cplusplus
+
+// extern "C"的真实目的是实现类C和C++的混合编程
+// extern “C”是由Ｃ＋＋提供的一个连接交换指定符号，用于告诉Ｃ＋＋这段代码是Ｃ函数
+// extern “C”后面的函数不使用的C++的名字修饰,而是用C。这是因为C++编译后库中函数名会变得很长，与C生成的不一致，造成Ｃ＋＋不能直接调用C函数
+
 extern "C" {
 #endif //__cplusplus
 
@@ -42,9 +48,9 @@ extern "C" {
  * name to its replacement
  */
 struct rebinding {
-  const char *name;
-  void *replacement;
-  void **replaced;
+    const char *name;     // 原方法名,一个字符串
+    void *replacement;    // 替换后的方法地址
+    void **replaced;      // 旧方法的指针(旧方法地址位于__bss段)
 };
 
 /*
@@ -56,6 +62,7 @@ struct rebinding {
  * is rebound more than once, the later rebinding will take precedence.
  */
 FISHHOOK_VISIBILITY
+//两个参数分别是rebinding结构体数组，rebindings_nel，也就是 rebindings 的个数也就是数组的长度
 int rebind_symbols(struct rebinding rebindings[], size_t rebindings_nel);
 
 /*
@@ -63,6 +70,7 @@ int rebind_symbols(struct rebinding rebindings[], size_t rebindings_nel);
  * to the mach-o header, the slide should be the slide offset. Others as above.
  */
 FISHHOOK_VISIBILITY
+//只在指定的镜像中重新绑定。header应该指向mach-o的header，slide应该是slide的偏移量。如上所述。
 int rebind_symbols_image(void *header,
                          intptr_t slide,
                          struct rebinding rebindings[],
